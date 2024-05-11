@@ -6,7 +6,10 @@ require("dotenv").config()
 const app = express()
 const port = process.env.PORT || 5000;
 
-  app.use(cors())
+app.use(cors({
+  origin:["http://localhost:5173"],
+  credentials:true
+}))
   app.use(express.json()) 
   app.use(cookieParser())
 
@@ -27,12 +30,22 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+    const bookCollection = client.db("bookDB").collection("allBooks")
+
+    app.post("/book",async(req,res)=>{
+      const book = req.body;
+      const result = await bookCollection.insertOne(book)
+      res.send(result)
+    })
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
