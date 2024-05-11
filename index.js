@@ -14,7 +14,7 @@ app.use(cors({
   app.use(cookieParser())
 
   
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.akl91ab.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -31,12 +31,64 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const bookCollection = client.db("bookDB").collection("allBooks")
+    const categoryCollection = client.db("bookDB").collection("bookCategory")
 
     app.post("/book",async(req,res)=>{
       const book = req.body;
       const result = await bookCollection.insertOne(book)
       res.send(result)
     })
+
+    app.get("/entireBook",async(req,res)=>{
+
+      const result = await bookCollection.find().toArray()
+      res.send(result)
+    })
+
+    app.get("/bookCategory",async(req,res)=>{
+
+      const result = await categoryCollection.find().toArray()
+      res.send(result)
+    })
+
+    app.get("/details/:id",async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await bookCollection.findOne(query)
+      res.send(result)
+    })
+
+    app.get("/books/:category",async(req,res)=>{
+      const category = req.params.category;
+      const result = await bookCollection.find({category:category}).toArray()
+      res.send(result)
+
+    })
+
+    app.patch("/update/:id",async(req,res)=>{
+
+      const id = req.params.id
+      const filter = {_id: new ObjectId(id)}
+      const option = {upsert:true}
+      const updatedBook = req.body;
+      const book = {
+        $set: {
+          photo: updatedBook.photo,
+          bookName: updatedBook.bookName,
+          authorName: updatedBook.authorName,
+          category: updatedBook.category,
+          rating:updatedBook.rating
+        }
+      }
+
+      const result = await bookCollection.updateOne(filter,book,option)
+
+      res.send(result)
+
+
+    })
+
+
 
 
 
