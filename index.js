@@ -64,6 +64,12 @@ async function run() {
       res.send(result)
 
     })
+    app.get("/updatedBooks/:email",async(req,res)=>{
+      const email = req.params.email;
+      const result = await bookCollection.find({email:email}).toArray()
+      res.send(result)
+
+    })
 
     app.patch("/update/:id",async(req,res)=>{
 
@@ -86,6 +92,28 @@ async function run() {
       res.send(result)
 
 
+    })
+
+    app.patch("/borrowUpdate/:id",async(req,res)=>{
+      const id = req.params.id
+     const borrowDoc=req.body
+     const filter = {_id: new ObjectId(id)}
+     const option = {upsert:true}
+
+     const borrow = {
+      $set:{
+        email:borrowDoc.userEmail,
+        name:borrowDoc.userName,
+        borrowDate:borrowDoc.borrowedDate,
+        returnDate:borrowDoc.returnedDate
+
+      },
+      $inc:{quantity:-1}
+     }
+
+     const result = await bookCollection.updateOne(filter,borrow,option)
+
+     res.send(result)
     })
 
 
