@@ -116,6 +116,27 @@ async function run() {
      res.send(result)
     })
 
+    app.patch("/returnBook/:id",async(req,res)=>{
+
+      const id = req.params.id
+      const filter = {_id: new ObjectId(id)}
+      const option = {upsert:true}
+      const bookReturn = {
+
+        $inc:{quantity:1},
+        $unset:{email:""}
+      }
+
+      const result = await bookCollection.updateOne(filter,bookReturn,option)
+
+      res.send(result)
+
+
+
+
+
+    })
+
 
 
 
