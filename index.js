@@ -73,7 +73,7 @@ async function run() {
       const user = req.body
 
       res
-      .clearCookie("token", { maxAge: 0 })
+      .clearCookie("token", { maxAge: 0,sameSite:"none",secure:true })
       .send({ success: true });
     })
 
