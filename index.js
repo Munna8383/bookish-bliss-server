@@ -13,6 +13,25 @@ app.use(cors({
   app.use(express.json()) 
   app.use(cookieParser())
 
+  const verifyToken = (req,res,next)=>{
+
+    const token = req.cookies.token
+    
+    if(!token){
+      return res.send({message:"unauthorize user"})
+    }
+
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+      if(err){
+        return res.send({message:"unauthorize access"})
+      }
+
+      req.user = decoded
+
+      next()
+    })
+  }
+
   
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.akl91ab.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -33,13 +52,45 @@ async function run() {
     const bookCollection = client.db("bookDB").collection("allBooks")
     const categoryCollection = client.db("bookDB").collection("bookCategory")
 
-    app.post("/book",async(req,res)=>{
+
+    app.post("/jwt",async(req,res)=>{
+
+      const user = req.body
+
+      const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:"1h"})
+
+      res.cookie("token",token,{
+
+       httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
+
+      }).send({success:true})
+    })
+
+    app.post("/logout",async(req,res)=>{
+
+      const user = req.body
+
+      res
+      .clearCookie("token", { maxAge: 0 })
+      .send({ success: true });
+    })
+
+
+
+
+
+
+
+    app.post("/book",verifyToken,async(req,res)=>{
       const book = req.body;
       const result = await bookCollection.insertOne(book)
       res.send(result)
     })
 
-    app.get("/entireBook",async(req,res)=>{
+    app.get("/entireBook",verifyToken,async(req,res)=>{
+
 
       const result = await bookCollection.find().toArray()
       res.send(result)
@@ -64,7 +115,7 @@ async function run() {
       res.send(result)
 
     })
-    app.get("/updatedBooks/:email",async(req,res)=>{
+    app.get("/updatedBooks/:email",verifyToken,async(req,res)=>{
       const email = req.params.email;
       const result = await bookCollection.find({email:email}).toArray()
       res.send(result)
