@@ -13,23 +13,27 @@ app.use(cors({
   app.use(express.json()) 
   app.use(cookieParser())
 
+
+
   const verifyToken = (req,res,next)=>{
 
-    const token = req.cookies.token
-    
+    const token = req.cookies?.token
+  
+  
     if(!token){
-      return res.send({message:"unauthorize user"})
+      return res.status(401).send({message:"unauthorize"})
     }
-
+  
     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
       if(err){
-        return res.send({message:"unauthorize access"})
+        return res.status(401).send({message:"unauthorize access"})
       }
-
-      req.user = decoded
-
+  
+      req.user = decoded;
       next()
     })
+   
+    
   }
 
   
@@ -62,7 +66,7 @@ async function run() {
       res.cookie("token",token,{
 
        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production"?true:false,
         sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
 
       }).send({success:true})
@@ -73,13 +77,9 @@ async function run() {
       const user = req.body
 
       res
-      .clearCookie("token", { maxAge: 0,sameSite:"none",secure:true })
+      .clearCookie("token", { maxAge: 0,sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",secure: process.env.NODE_ENV === "production"?true:false })
       .send({ success: true });
     })
-
-
-
-
 
 
 
@@ -115,7 +115,7 @@ async function run() {
       res.send(result)
 
     })
-    app.get("/updatedBooks/:email",verifyToken,async(req,res)=>{
+    app.get("/updatedBooks/:email",async(req,res)=>{
       const email = req.params.email;
       const result = await bookCollection.find({email:email}).toArray()
       res.send(result)
