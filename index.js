@@ -55,6 +55,7 @@ async function run() {
     // await client.connect();
     const bookCollection = client.db("bookDB").collection("allBooks")
     const categoryCollection = client.db("bookDB").collection("bookCategory")
+    const feedbackCollection = client.db("bookDB").collection("feedback")
 
 
     app.post("/jwt",async(req,res)=>{
@@ -81,6 +82,23 @@ async function run() {
       .send({ success: true });
     })
 
+    app.post("/feedback",async(req,res)=>{
+
+      const feedback = req.body
+      console.log(feedback)
+      const result = await feedbackCollection.insertOne(feedback)
+      res.send(result)
+
+
+    })
+
+    app.get("/feedback/:email",async(req,res)=>{
+      const email = req.params.email;
+      const query = {email:email}
+      const result = await feedbackCollection.find(query).toArray()
+      res.send(result)
+    })
+
 
 
     app.post("/book",verifyToken,async(req,res)=>{
@@ -91,8 +109,14 @@ async function run() {
 
     app.get("/entireBook",verifyToken,async(req,res)=>{
 
+      const filter = req.query
 
-      const result = await bookCollection.find().toArray()
+      const query = {
+      bookName : {$regex:filter.search,$options:"i"}
+      }
+
+
+      const result = await bookCollection.find(query).toArray()
       res.send(result)
     })
 
